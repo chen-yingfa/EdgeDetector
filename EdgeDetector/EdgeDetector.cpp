@@ -41,14 +41,16 @@ void processImages(std::string inputDir, std::string outputDir) {
 
     fs::directory_iterator dirIt(inputDir);
 
-    // loop all files in directory
+    // 遍历目录下所有文件
     for (const auto& entry : dirIt) {
         std::string ext = entry.path().extension().string();
         if (ext == PNG_EXT) { // 只处理 png 文件
             std::string filename = entry.path().string();
-            if (filename.find("test.png") != std::string::npos) continue;       // NOTE: remove this on release!
 
-            std::cout << "Processing " << filename << "\n";
+            if (filename.find("test.png") != std::string::npos) {   // 跳过测试图片，REMOVE ON RELEASE!
+                continue; 
+            }
+            std::cout << "正在处理：" << filename << "\n";
 
             int w, h;
             int compsPerPixel;
@@ -57,7 +59,7 @@ void processImages(std::string inputDir, std::string outputDir) {
 
             try {
                 Image* image = new Image(filename.c_str());
-                std::cout << "Loaded successfully\n";
+                std::cout << "成功载入图片\n";
 
                 std::cout << image->width << " " << image->height << " "
                     << image->bytesPerPixel << " " << image->bytesPerRow << "\n";
@@ -93,13 +95,13 @@ int main() {
 
     try {
         processImages(inputDir, outputDir);
-        std::cout << "Done processing all PNG files.\n";
+        std::cout << "所有 PNG 处理完毕.\n";
     }
     catch (std::string s) {
         std::cout << s << "\n";
     }
     
-    std::cout << "Program ends. Press ENTER to continue.\n";
+    std::cout << "结束。按任意键退出……\n";
     return 0;
 }
 

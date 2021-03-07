@@ -72,20 +72,20 @@ Image* Image::subImage(int x, int y, int h, int w) {
 	uchar* p = newData;
 	int newBytesPerRow = w * bytesPerPixel;
 
-	/*
+	
 	for (int i = 0; i < h; ++i) {
 		uchar* src = at(x + i, y);
 		uchar* dst = newData + i * newBytesPerRow;
-		printf("%p %p\n", src, dst);
+		//printf("%p %p\n", src, dst);
 		memcpy(dst, src, newBytesPerRow);
 	}
-	*/
+	
 
 	for (int i = 0; i < h; ++i) {
 		for (int j = 0; j < w; ++j) {
 			uchar* src = at(x + i, y + j);
 			uchar* dst = newData + i * newBytesPerRow + j * bytesPerPixel;
-			memcpy(dst, src, bytesPerPixel);
+			//memcpy(dst, src, bytesPerPixel);
 		}
 	}
 	return new Image(newData, h, w);
