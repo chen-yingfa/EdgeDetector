@@ -49,6 +49,7 @@ public:
 	~BWImage();
 
 	float at(const int x, const int y) const;
+	void set(const int x, const int y, const float val);
 	
 
 	BWImage* subImage(int x, int y, int h, int w);

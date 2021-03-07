@@ -31,7 +31,7 @@ Image::Image(uchar* data, int h, int w, std::string filename) {
 
 Image::~Image() {
 	if (data != nullptr) {
-		delete[] data;
+		// delete[] data;
 	}
 }
 
@@ -123,6 +123,9 @@ BWImage::~BWImage() {
 
 float BWImage::at(const int x, const int y) const {
 	return *(data + width * x + y);
+}
+void BWImage::set(const int x, const int y, const float val) {
+	*(data + width * x + y) = val;
 }
 
 BWImage* BWImage::subImage(int x, int y, int h, int w) {

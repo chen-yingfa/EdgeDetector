@@ -11,6 +11,7 @@
 #include <filesystem>
 
 #include "globals.h"
+#include "Gaussian.h"
 #include "image.h"
 
 using uchar = unsigned char;
@@ -40,6 +41,8 @@ void processImages(std::string inputDir, std::string outputDir) {
     }
 
     fs::directory_iterator dirIt(inputDir);
+
+    Gaussian gaussian(1);
 
     // 遍历目录下所有文件
     for (const auto& entry : dirIt) {
@@ -73,6 +76,13 @@ void processImages(std::string inputDir, std::string outputDir) {
                 image = bwToColor(bw);
 
                 image->save(outputDir + "\\test.png");
+                
+                gaussian.setImage(bw);
+
+                BWImage* filtered = gaussian.execute();
+
+                image = bwToColor(filtered);
+                image->save(outputDir + "\\filtered_test.png");
 
             } catch(std::string s) {
                 std::cout << s << "\n";
