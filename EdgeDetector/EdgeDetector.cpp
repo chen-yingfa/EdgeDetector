@@ -28,15 +28,22 @@ void processImages(std::string inputDir, std::string outputDir) {
 
     fs::directory_entry dirEntry(inputDir);
 
-    assert(dirEntry.exists() && dirEntry.is_directory());
+    if (!dirEntry.exists()) {
+        throw(std::string("Directory does not exist"));
+    }
+
+    if (!dirEntry.is_directory()) {
+        throw(std::string("Path is not a directory"));
+    }
 
     fs::directory_iterator dirIt(inputDir);
 
+    // loop all files in directory
     for (const auto& entry : dirIt) {
         std::string ext = entry.path().extension().string();
         if (ext == PNG_EXT) { // 只处理 png 文件
             std::string filename = entry.path().string();
-            if (filename == "test.png") continue;
+            if (filename.find("test.png") != std::string::npos) continue;       // NOTE: remove this on release!
 
             std::cout << "Processing " << filename << "\n";
 
@@ -51,19 +58,12 @@ void processImages(std::string inputDir, std::string outputDir) {
 
                 std::cout << image->width << " " << image->height << " "
                     << image->bytesPerPixel << " " << image->bytesPerRow << "\n";
-                
-                for (int i = 0; i < 10; ++i) {
-                    std::cout << image->getColor(i, i).str() << "\n";
-                }
 
-                printf("%p\n", image->data);
-                   
-                image = image->subImage(100, 100, 400, 400);
-                printf("%p\n", image->data);
+                image = image->subImage(100, 100, image->height - 1000, image->width - 400);
 
-                for (int i = 0; i < 10; ++i) {
-                    std::cout << image->getColor(i, 20).str() << "\n";
-                }
+                // perform edge detection on image
+
+
                 image->save(outputDir + "\\test.png");
 
             } catch(std::string s) {
@@ -81,6 +81,7 @@ int main() {
     std::getline(std::cin, inputDir);
     std::cout << "Output folder path\n";
     std::getline(std::cin, outputDir);
+
     processImages(inputDir, outputDir);
     
     std::cout << "Done processing all PNG files. Press ENTER to continue.\n";

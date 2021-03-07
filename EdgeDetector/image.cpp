@@ -66,11 +66,12 @@ Vec3 Image::getColor(int x, int y) const {
 
 
 Image* Image::subImage(int x, int y, int h, int w) {
-	std::cout << "h, w = " << h << ", " << w << "\n";
-	std::cout << "num pixels: " << h * w << "\n";
+	// std::cout << "h, w = " << h << ", " << w << "\n";
+	// std::cout << "num pixels: " << h * w << "\n";
 	uchar* newData = new uchar[h * w * bytesPerPixel];
 	uchar* p = newData;
 	int newBytesPerRow = w * bytesPerPixel;
+
 	/*
 	for (int i = 0; i < h; ++i) {
 		uchar* src = at(x + i, y);
@@ -84,11 +85,6 @@ Image* Image::subImage(int x, int y, int h, int w) {
 		for (int j = 0; j < w; ++j) {
 			uchar* src = at(x + i, y + j);
 			uchar* dst = newData + i * newBytesPerRow + j * bytesPerPixel;
-
-			if (i % 4 == 0 && j % 4 == 0) {
-				printf("%d, %d, %p, %p\n", i, j, src, dst);
-			}
-
 			memcpy(dst, src, bytesPerPixel);
 		}
 	}
