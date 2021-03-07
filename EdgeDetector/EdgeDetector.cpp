@@ -13,13 +13,16 @@
 #include "globals.h"
 #include "image.h"
 
-using Img = std::vector<std::vector<float> >;
 using uchar = unsigned char;
 
 namespace fs = std::filesystem;
 
-void gaussian(Img& img) {
-    
+Image* gaussian(Image* img) {
+    return nullptr;
+}
+
+Image* canny(Image* img) {
+    return nullptr;
 }
 
 void processImages(std::string inputDir, std::string outputDir) {
@@ -59,7 +62,8 @@ void processImages(std::string inputDir, std::string outputDir) {
                 std::cout << image->width << " " << image->height << " "
                     << image->bytesPerPixel << " " << image->bytesPerRow << "\n";
 
-                image = image->subImage(100, 100, image->height - 1000, image->width - 400);
+                // save a small part of the picture
+                image = image->subImage(image->height / 10, image->width / 10, image->height / 2, image->width / 2);
 
                 // perform edge detection on image
 
@@ -75,16 +79,27 @@ void processImages(std::string inputDir, std::string outputDir) {
 
 
 int main() {
-    std::cout << __cplusplus << "\n";
+    std::cout << "CPP version: " << __cplusplus << "\n";
+
+    // 请求用户输入：
+    // - 存放图片的目录
+    // - 输出图片的目标目录 
     std::string inputDir, outputDir;
-    std::cout << "Input folder path\n";
+    std::cout << "注：输入路径，略去引号\n";
+    std::cout << "请输入存放图片的目录：\n";
     std::getline(std::cin, inputDir);
-    std::cout << "Output folder path\n";
+    std::cout << "请输入结果的目标目录：\n";
     std::getline(std::cin, outputDir);
 
-    processImages(inputDir, outputDir);
+    try {
+        processImages(inputDir, outputDir);
+        std::cout << "Done processing all PNG files.\n";
+    }
+    catch (std::string s) {
+        std::cout << s << "\n";
+    }
     
-    std::cout << "Done processing all PNG files. Press ENTER to continue.\n";
+    std::cout << "Program ends. Press ENTER to continue.\n";
     return 0;
 }
 
