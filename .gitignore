@@ -1,3 +1,4 @@
 .vs*
 EdgeDetector/Debug/*
-*/Debug/*
+Debug/*
+output/*

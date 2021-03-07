@@ -11,6 +11,7 @@
 #include <filesystem>
 
 #include "globals.h"
+#include "Gaussian.h"
 #include "image.h"
 
 using uchar = unsigned char;
@@ -41,6 +42,8 @@ void processImages(std::string inputDir, std::string outputDir) {
 
     fs::directory_iterator dirIt(inputDir);
 
+    Gaussian gaussian(1);
+
     // 遍历目录下所有文件
     for (const auto& entry : dirIt) {
         std::string ext = entry.path().extension().string();
@@ -65,12 +68,21 @@ void processImages(std::string inputDir, std::string outputDir) {
                     << image->bytesPerPixel << " " << image->bytesPerRow << "\n";
 
                 // save a small part of the picture
-                image = image->subImage(image->height / 10, image->width / 10, image->height / 2, image->width / 2);
+                // image = image->subImage(image->height / 10, image->width / 10, image->height / 2, image->width / 2);
 
                 // perform edge detection on image
 
+                BWImage* bw = new BWImage(image);
+                image = bwToColor(bw);
 
                 image->save(outputDir + "\\test.png");
+                
+                gaussian.setImage(bw);
+
+                BWImage* filtered = gaussian.execute();
+
+                image = bwToColor(filtered);
+                image->save(outputDir + "\\filtered_test.png");
 
             } catch(std::string s) {
                 std::cout << s << "\n";
