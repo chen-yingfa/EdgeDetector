@@ -27,6 +27,8 @@ BWImage* Gaussian::execute() {
 	for (int i = 0; i < h * w; ++i) {
 		resultData[i] = 0.0;
 	}
+	BWImage* result = new BWImage(resultData, h, w, image->filename);
+
 	int threadHeight = (h - KERNEL_SIZE) / nThreads;
 
 	std::vector<std::thread> threads;
@@ -42,5 +44,5 @@ BWImage* Gaussian::execute() {
 		th.join();
 	}
 	
-	return new BWImage(resultData, h, w, image->filename);
+	return result;
 }

@@ -42,7 +42,7 @@ void processImages(std::string inputDir, std::string outputDir) {
 
     fs::directory_iterator dirIt(inputDir);
 
-    Gaussian gaussian(1);
+    Gaussian gaussian(20); // 用同一个滤波器的对象
 
     // 遍历目录下所有文件
     for (const auto& entry : dirIt) {
@@ -62,27 +62,27 @@ void processImages(std::string inputDir, std::string outputDir) {
 
             try {
                 Image* image = new Image(filename.c_str());
-                std::cout << "成功载入图片\n";
-
-                std::cout << image->width << " " << image->height << " "
-                    << image->bytesPerPixel << " " << image->bytesPerRow << "\n";
-
-                // save a small part of the picture
-                // image = image->subImage(image->height / 10, image->width / 10, image->height / 2, image->width / 2);
+                std::cout << "成功载入图片 (" << image->width << "x" << image->height << ")\n";
 
                 // perform edge detection on image
 
+                // 转成黑白
                 BWImage* bw = new BWImage(image);
-                image = bwToColor(bw);
 
+                // 保存黑白图片，记得删掉
+                image = bwToColor(bw);
                 image->save(outputDir + "\\test.png");
                 
+                // 高斯滤波
                 gaussian.setImage(bw);
-
                 BWImage* filtered = gaussian.execute();
 
+                // 保存过滤后的图片，记得删掉
                 image = bwToColor(filtered);
                 image->save(outputDir + "\\filtered_test.png");
+
+                // Canny 算子检测边缘
+
 
             } catch(std::string s) {
                 std::cout << s << "\n";
