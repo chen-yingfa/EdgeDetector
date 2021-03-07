@@ -16,8 +16,8 @@ public:
 	int comps = 3;
 
 	Image();
-	Image(std::string filename);
-	Image(uchar* data, int h, int w);
+	Image(std::string filename, bool bw = false);
+	Image(uchar* data, int h, int w, bool bw = false);
 	~Image();
 
 	uchar* at(const int x) const;
@@ -31,4 +31,17 @@ public:
 	Image* subImage(int x, int y, int h, int w);
 };
 
+class BWImage {
+public:
+	float* data;
+	int height, width;
+	std::string filename;
 
+	BWImage() : height(0), width(0), filename(""), data(nullptr) {}
+	BWImage(Image* img);
+	~BWImage();
+
+	float at(const int x, const int y) const;
+
+	BWImage* subImage(int x, int y, int h, int w);
+};

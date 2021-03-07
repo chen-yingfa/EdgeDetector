@@ -13,17 +13,32 @@ Image::Image() :
 		height(0),
 		bytesPerRow(0) {}
 
-Image::Image(std::string filename) :
+Image::Image(std::string filename, bool bw = false) :
 		filename(filename) {
 	data = stbi_load(filename.c_str(), &width, &height, &comps, bytesPerPixel);
 	if (!data) {
 		throw(std::string("Load image failed"));
 	}
-
 	this->bytesPerRow = bytesPerPixel * width;
 
+	if (bw) { // turn in to black and white
+		float* bwdata = new float[width * height];
+		for (int i = 0; i < height; ++i) {
+			for (int j = 0; j < width; ++j) {
+				int r = *data;
+				int g = data[1];
+				int b = data[2];
+				bwdata[i++] = 0.212 * r + 0.7152 * 
+			}
+		}
+	}
+
+
 }
-Image::Image(uchar* data, int h, int w) {
+Image::Image(uchar* data, int h, int w, bool bw = false) {
+	if (bw) {
+		bytesPerPixel = 1;
+	}
 	this->data = data;
 	height = h;
 	width = w;
@@ -89,4 +104,35 @@ Image* Image::subImage(int x, int y, int h, int w) {
 		}
 	}
 	return new Image(newData, h, w);
+}
+
+
+
+BWImage::BWImage(Image* img) {
+	width = img->width;
+	height = img->height;
+	filename = img->filename;
+	data = new float[width * height];
+
+	for (int i = 0; i < height; ++i) {
+		for (int j = 0; j < width; ++j) {
+			uchar* pixel = img->at(i, j);
+			float r = (float) pixel[0];
+			float g = (float) pixel[1];
+			float b = (float) pixel[2];
+			*(data + i * width + j) = 0.212 * r + 0.7152 * g + 0.0722 * b;
+		}
+	}
+}
+
+BWImage::~BWImage() {
+	delete[] data;
+}
+
+float BWImage::at(const int x, const int y) const {
+	return *(data + width * x + y);
+}
+
+BWImage* BWImage::subImage(int x, int y, int h, int w) {
+	
 }
