@@ -143,10 +143,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="EdgeDetector.cpp" />
+    <ClCompile Include="Gaussian.cpp" />
     <ClCompile Include="image.cpp" />
     <ClCompile Include="Vec.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Gaussian.h" />
     <ClInclude Include="globals.h" />
     <ClInclude Include="image.h" />
     <ClInclude Include="stb_image.h" />

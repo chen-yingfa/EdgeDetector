@@ -65,10 +65,12 @@ void processImages(std::string inputDir, std::string outputDir) {
                     << image->bytesPerPixel << " " << image->bytesPerRow << "\n";
 
                 // save a small part of the picture
-                image = image->subImage(image->height / 10, image->width / 10, image->height / 2, image->width / 2);
+                // image = image->subImage(image->height / 10, image->width / 10, image->height / 2, image->width / 2);
 
                 // perform edge detection on image
 
+                BWImage* bw = new BWImage(image);
+                image = bwToColor(bw);
 
                 image->save(outputDir + "\\test.png");
 

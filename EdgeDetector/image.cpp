@@ -13,35 +13,19 @@ Image::Image() :
 		height(0),
 		bytesPerRow(0) {}
 
-Image::Image(std::string filename, bool bw = false) :
+Image::Image(std::string filename) :
 		filename(filename) {
 	data = stbi_load(filename.c_str(), &width, &height, &comps, bytesPerPixel);
 	if (!data) {
 		throw(std::string("Load image failed"));
 	}
 	this->bytesPerRow = bytesPerPixel * width;
-
-	if (bw) { // turn in to black and white
-		float* bwdata = new float[width * height];
-		for (int i = 0; i < height; ++i) {
-			for (int j = 0; j < width; ++j) {
-				int r = *data;
-				int g = data[1];
-				int b = data[2];
-				bwdata[i++] = 0.212 * r + 0.7152 * 
-			}
-		}
-	}
-
-
 }
-Image::Image(uchar* data, int h, int w, bool bw = false) {
-	if (bw) {
-		bytesPerPixel = 1;
-	}
+Image::Image(uchar* data, int h, int w, std::string filename) {
 	this->data = data;
 	height = h;
 	width = w;
+	this->filename = filename;
 	bytesPerRow = bytesPerPixel * width;
 }
 
@@ -103,7 +87,7 @@ Image* Image::subImage(int x, int y, int h, int w) {
 			//memcpy(dst, src, bytesPerPixel);
 		}
 	}
-	return new Image(newData, h, w);
+	return new Image(newData, h, w, filename);
 }
 
 
@@ -117,12 +101,20 @@ BWImage::BWImage(Image* img) {
 	for (int i = 0; i < height; ++i) {
 		for (int j = 0; j < width; ++j) {
 			uchar* pixel = img->at(i, j);
-			float r = (float) pixel[0];
-			float g = (float) pixel[1];
-			float b = (float) pixel[2];
-			*(data + i * width + j) = 0.212 * r + 0.7152 * g + 0.0722 * b;
+			float r = ((float) pixel[0]) / 255.0;
+			float g = ((float) pixel[1]) / 255.0;
+			float b = ((float) pixel[2]) / 255.0;
+			float grayscale = 0.212 * r + 0.7152 * g + 0.0722 * b;
+			*(data + i * width + j) = grayscale;
 		}
 	}
+}
+
+BWImage::BWImage(float* data, int h, int w, std::string filename) {
+	height = h;
+	width = w;
+	this->data = data;
+	this->filename = filename;
 }
 
 BWImage::~BWImage() {
@@ -134,5 +126,29 @@ float BWImage::at(const int x, const int y) const {
 }
 
 BWImage* BWImage::subImage(int x, int y, int h, int w) {
-	
+	float* newdata = new float[h * w];
+	for (int i = 0; i < h; ++i) {
+		for (int j = 0; j < w; ++j) {
+			int row = x + i;
+			int col = y + j;
+			*(newdata + row * w + col) = at(row, col);
+		}
+	}
+	return new BWImage(newdata, h, w, filename);
+}
+
+Image* bwToColor(BWImage* bwImage) {
+	int h = bwImage->height;
+	int w = bwImage->width;
+	uchar* data = new uchar[h * w * 3];
+	uchar *p = data;
+
+	for (int i = 0; i < h; ++i) {
+		for (int j = 0; j < w; ++j) {
+			uchar val = (uchar)255.0 * bwImage->at(i, j);
+			p[2] = p[1] = p[0] = val;
+			p += 3;
+		}
+	}
+	return new Image(data, h, w, bwImage->filename);
 }
