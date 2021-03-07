@@ -51,16 +51,17 @@ void processImages(std::string inputDir, std::string outputDir) {
 
                 std::cout << image->width << " " << image->height << " "
                     << image->bytesPerPixel << " " << image->bytesPerRow << "\n";
-                for (int i = 0; i < 20; ++i) {
+                
+                for (int i = 0; i < 10; ++i) {
                     std::cout << image->getColor(i, i).str() << "\n";
                 }
 
                 printf("%p\n", image->data);
                    
-                image = image->subImage(100, 100, 100, 100);
+                image = image->subImage(100, 100, 400, 400);
                 printf("%p\n", image->data);
 
-                for (int i = 0; i < 20; ++i) {
+                for (int i = 0; i < 10; ++i) {
                     std::cout << image->getColor(i, 20).str() << "\n";
                 }
                 image->save(outputDir + "\\test.png");

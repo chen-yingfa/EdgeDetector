@@ -84,6 +84,11 @@ Image* Image::subImage(int x, int y, int h, int w) {
 		for (int j = 0; j < w; ++j) {
 			uchar* src = at(x + i, y + j);
 			uchar* dst = newData + i * newBytesPerRow + j * bytesPerPixel;
+
+			if (i % 4 == 0 && j % 4 == 0) {
+				printf("%d, %d, %p, %p\n", i, j, src, dst);
+			}
+
 			memcpy(dst, src, bytesPerPixel);
 		}
 	}
