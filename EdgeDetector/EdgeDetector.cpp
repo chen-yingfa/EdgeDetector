@@ -88,7 +88,7 @@ void processImages(std::string inputDir, std::string outputDir) {
                 image->save(outputDir + "\\filtered_test.png");
 
 
-                Canny canny(1);
+                Canny canny(20);
                 //BWImage* nbw = new BWImage(image);
                 canny.setImage(filtered);
                 BWImage* cool = canny.execute();

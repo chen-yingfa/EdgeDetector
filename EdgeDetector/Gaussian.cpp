@@ -1,24 +1,32 @@
 #include "Gaussian.h"
 #include <iostream>
 
+bool inline inBounds(int x, int y, int n, int m) {
+	return (0 <= x && x < n && 0 <= y && y < m);
+}
+
 // NOTE: height of image must be >= xhi + KERNEL_SIZE
 void job(Gaussian* gauss, int xlo, int xhi) {
 	int w = gauss->image->width;
-	int padding = gauss->KERNEL_SIZE / 2;
+	int h = gauss->image->height;
+	int ks = gauss->KERNEL_SIZE;
+	int padding = ks / 2;
 	for (int x = xlo; x < xhi; ++x) {
-		for (int y = 0; y < w - gauss->KERNEL_SIZE; ++y) {
+		for (int y = 0; y < w; ++y) {
 			float val = 0;
-			for (int i = 0; i < gauss->KERNEL_SIZE; ++i) {
-				for (int j = 0; j < gauss->KERNEL_SIZE; ++j) {
-					int row = x + i;
-					int col = y + j;
-					val += gauss->image->at(row, col) * gauss->kernel[i][j] / gauss->kernelSum;
+			for (int i = 0; i < ks; ++i) {
+				for (int j = 0; j < ks; ++j) {
+					int row = x + i - padding;
+					int col = y + j - padding;
+					float pixel = 0.5;
+					if (inBounds(row, col, h, w)) {
+						pixel = gauss->image->at(row, col);
+					}
+					val += pixel * gauss->kernel[i][j] / gauss->kernelSum;
 				}
 			}
-			int row = x + padding;
-			int col = y + padding;
-			float* dst = gauss->resultData + row * w + col;
-			*dst = (*dst) + val;
+			float* dst = gauss->resultData + x * w + y;
+			*dst += val;
 		}
 	}
 }
@@ -37,8 +45,7 @@ BWImage* Gaussian::execute() {
 	for (int i = 0; i < nThreads; ++i) {
 		int xlo = i * threadHeight;
 		int xhi = std::min(xlo + threadHeight, h);
-		std::thread thr(job, this, xlo, xhi);
-		threads.push_back(move(thr));
+		threads.emplace_back(job, this, xlo, xhi);
 	}
 
 	for (auto& th : threads) {

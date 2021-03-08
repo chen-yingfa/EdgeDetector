@@ -23,6 +23,8 @@ public:
 	uchar* at(const int x) const;
 	uchar* at(const int x, const int y) const;
 
+	int size() const { return height * width; }
+
 	void load(std::string filename);
 	void save(std::string filename);
 
@@ -47,6 +49,8 @@ public:
 	}
 	BWImage(float* data, int h, int w, std::string filename);
 	~BWImage();
+
+	int size() const { return height * width; }
 
 	float at(const int x, const int y) const;
 	void set(const int x, const int y, const float val);
