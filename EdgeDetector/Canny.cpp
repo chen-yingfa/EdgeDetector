@@ -9,19 +9,24 @@ BWImage* convolve(BWImage* img, vector<vector<int>> kernel) {
 	int w = img->width;
 	int kh = kernel.size();
 	int kw = kernel[0].size();
-	int ks = kh * kw;
+	float ks = kh * kw;
 	int padding = kh / 2; // boundary pixels of the image
 
 
 	float* res = new float[h * w];
+	for (int i = 0; i < h * w; ++i) {
+		res[i] = 0;
+	}
 	for (int y = padding; y < h - padding; ++y) {
 		for (int x = padding; x < w - padding; ++x) {
 			float intensity = 0;
 			for (int ky = 0; ky < kh; ++ky) {
 				for (int kx = 0; kx < kw; ++kx) {
+					int row = y + ky - padding;
+					int col = x + kx - padding;
 					float p = img->at(0, 0);
-					float r = img->at(y + ky - padding, x + kx - padding);
-					intensity += img->at(y+ky-padding, x + kx - padding) * kernel[ky][kx];
+					float r = img->at(row, col);
+					intensity += img->at(row, col) * kernel[ky][kx];
 				}
 			}
 			float* dst = res + y * w + x;
@@ -39,7 +44,7 @@ BWImage* magnitude(BWImage* gx, BWImage* gy) {
 	float* magnitude = new float[w * h];
 	for (int y = 0; y < h; ++y) {
 		for (int x = 0; x < w; ++x) {
-			magnitude[y * w + x] = hypot(gx->at(y, x), gx->at(y, x));
+			magnitude[y * w + x] = hypot(gx->at(y, x), gy->at(y, x));
 		}
 	}
 	return new BWImage(magnitude, h, w, "");
@@ -49,11 +54,11 @@ BWImage* magnitude(BWImage* gx, BWImage* gy) {
 void normalize(BWImage* img) {
 	int w = img->width;
 	int h = img->height;
-	float max = 0;
+	float max = 0.0;
 	for (int y = 0; y < h; ++y) {
 		for (int x = 0; x < w; ++x) {
 			float intensity = img->at(y, x);
-			max = (max > intensity) ? max : intensity;
+			max = std::max(max, intensity);
 		}
 	}
 	for (int i = 0; i < w * h; ++i) {
