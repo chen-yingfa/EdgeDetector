@@ -27,6 +27,9 @@
     <ClCompile Include="Gaussian.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Canny.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stb_image.h">
@@ -45,6 +48,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Gaussian.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Canny.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

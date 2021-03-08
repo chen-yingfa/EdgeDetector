@@ -143,12 +143,14 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Canny.cpp" />
     <ClCompile Include="EdgeDetector.cpp" />
     <ClCompile Include="Gaussian.cpp" />
     <ClCompile Include="image.cpp" />
     <ClCompile Include="Vec.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Canny.h" />
     <ClInclude Include="Gaussian.h" />
     <ClInclude Include="globals.h" />
     <ClInclude Include="image.h" />

@@ -12,6 +12,7 @@
 
 #include "globals.h"
 #include "Gaussian.h"
+#include "Canny.h"
 #include "image.h"
 
 using uchar = unsigned char;
@@ -76,13 +77,24 @@ void processImages(std::string inputDir, std::string outputDir) {
                 image = bwToColor(bw);
 
                 image->save(outputDir + "\\test.png");
-                
+
+
+                /*
                 gaussian.setImage(bw);
 
                 BWImage* filtered = gaussian.execute();
 
                 image = bwToColor(filtered);
-                image->save(outputDir + "\\filtered_test.png");
+                image->save(outputDir + "\\filtered_test.png");*/
+
+
+                Canny canny(1);
+                //BWImage* nbw = new BWImage(image);
+                canny.setImage(bw);
+                BWImage* cool = canny.execute();
+
+                image = bwToColor(cool);
+                image->save(outputDir + "\\NEWfiltered_test.png");
 
             } catch(std::string s) {
                 std::cout << s << "\n";
