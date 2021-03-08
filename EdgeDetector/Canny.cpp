@@ -3,6 +3,7 @@
 #include <iostream>
 using namespace std;
 
+# define PI	3.14159265358979323
 
 void convolve(BWImage* img, vector<vector<int>> kernel, BWImage* result, int xlo, int xhi) {
 	int h = img->height;
@@ -119,6 +120,46 @@ void findGrad(BWImage* image, BWImage** gx, BWImage** gy, int nThreads) {
 	}
 }
 
+
+// For each pixel in the gradient magnitude image, make sure it is the local maximum 
+// along the direction of the gradient
+// This is called non-maxima suppresion
+void nonMaximaSuppresion(BWImage* gradMagnitude, BWImage* gx , BWImage* gy) {
+	int w = gradMagnitude->width;
+	int h = gradMagnitude->height;
+	for (int y = 1; y < h - 1; ++y) {
+		for (int x = 1; x < w - 1; ++x) {
+			float angle = atan2f(gy->at(y, x), gx->at(y, x));
+			// 4 directions
+			float dir = 8 * std::fmod(angle + PI, PI) / PI;
+			float intensity = gradMagnitude->at(y, x);
+			float neighbor[2] = { 0, 0 };
+			if (dir > 1 && dir <= 3) {	// 0 deg
+				neighbor[0] = gradMagnitude->at(y, x + 1);
+				neighbor[1] = gradMagnitude->at(y, x - 1);
+			}
+			else if (dir > 3 && dir <= 5) {	// 45 deg
+				neighbor[0] = gradMagnitude->at(y - 1, x + 1);
+				neighbor[1] = gradMagnitude->at(y + 1, x - 1);
+			}
+			else if (dir > 5 && dir <= 7) {	// 90 deg
+				neighbor[0] = gradMagnitude->at(y - 1, x);
+				neighbor[1] = gradMagnitude->at(y + 1, x);
+			}
+			else if (dir > 7 || dir <= 1) {	// 90 deg
+				neighbor[0] = gradMagnitude->at(y - 1, x - 1);
+				neighbor[1] = gradMagnitude->at(y + 1, x + 1);
+			}
+
+			// If the magnitude of the gradient at the pixel is less than any of its neighbors along the direction (forward and backward)
+			if (gradMagnitude->at(y, x) < neighbor[0] || gradMagnitude->at(y, x) < neighbor[1]) {
+				gradMagnitude->data[y * w + x] = 0;
+			}
+		}
+	}
+}
+
+
 BWImage* Canny::execute() {
 	int w = image->width;
 	int h = image->height;
@@ -135,6 +176,8 @@ BWImage* Canny::execute() {
 	tmpImg->save("..\\input\\sobely.test.png");
 	
 	BWImage* gradientMagnitude = magnitude(gx, gy, nThreads);
+
+	nonMaximaSuppresion(gradientMagnitude, gx, gy);
 	normalize(gradientMagnitude);
 
 	return gradientMagnitude;
