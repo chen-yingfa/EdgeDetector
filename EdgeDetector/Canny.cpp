@@ -58,6 +58,7 @@ void normalize(BWImage* img) {
 	for (int y = 0; y < h; ++y) {
 		for (int x = 0; x < w; ++x) {
 			float intensity = img->at(y, x);
+			intensity = std::max(0.0f, intensity);
 			max = std::max(max, intensity);
 		}
 	}
@@ -86,9 +87,9 @@ BWImage* Canny::execute() {
 
 	// Print save sobel x and y
 	Image* tmpImg = bwToColor(gx);
-	tmpImg->save(".\\sobelx.png");
+	tmpImg->save("..\\input\\sobelx.test.png");
 	tmpImg = bwToColor(gy);
-	tmpImg->save(".\\sobely.png");
+	tmpImg->save("..\\input\\sobely.test.png");
 	
 	BWImage* gradientMagnitude = magnitude(gx, gy);
 	normalize(gradientMagnitude);

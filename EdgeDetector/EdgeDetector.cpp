@@ -79,18 +79,18 @@ void processImages(std::string inputDir, std::string outputDir) {
                 image->save(outputDir + "\\test.png");
 
 
-                /*
+                
                 gaussian.setImage(bw);
 
                 BWImage* filtered = gaussian.execute();
 
                 image = bwToColor(filtered);
-                image->save(outputDir + "\\filtered_test.png");*/
+                image->save(outputDir + "\\filtered_test.png");
 
 
                 Canny canny(1);
                 //BWImage* nbw = new BWImage(image);
-                canny.setImage(bw);
+                canny.setImage(filtered);
                 BWImage* cool = canny.execute();
 
                 image = bwToColor(cool);

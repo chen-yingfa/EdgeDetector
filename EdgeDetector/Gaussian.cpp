@@ -4,18 +4,21 @@
 // NOTE: height of image must be >= xhi + KERNEL_SIZE
 void job(Gaussian* gauss, int xlo, int xhi) {
 	int w = gauss->image->width;
+	int padding = gauss->KERNEL_SIZE / 2;
 	for (int x = xlo; x < xhi; ++x) {
 		for (int y = 0; y < w - gauss->KERNEL_SIZE; ++y) {
+			float val = 0;
 			for (int i = 0; i < gauss->KERNEL_SIZE; ++i) {
 				for (int j = 0; j < gauss->KERNEL_SIZE; ++j) {
 					int row = x + i;
 					int col = y + j;
-					float val = gauss->image->at(row, col) * gauss->kernel[i][j] / gauss->kernelSum;
-					float* dst = gauss->resultData + row * w + col;
-					// std::cout << row << " " << col << "\n";
-					*dst = (*dst) + val;
+					val += gauss->image->at(row, col) * gauss->kernel[i][j] / gauss->kernelSum;
 				}
 			}
+			int row = x + padding;
+			int col = y + padding;
+			float* dst = gauss->resultData + row * w + col;
+			*dst = (*dst) + val;
 		}
 	}
 }
