@@ -15,7 +15,7 @@ public:
 	BWImage* image;
 	float* resultData;
 	int nThreads;
-	float tmin = 0.08, tmax = 0.24;
+	float tmin = 0.06, tmax = 0.12;
 
 	Canny(int nThreads) : 
 		image(nullptr), 

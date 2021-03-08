@@ -1,28 +1,41 @@
 #include "Gaussian.h"
 #include <iostream>
 
-// NOTE: height of image must be >= xhi + KERNEL_SIZE
-void job(Gaussian* gauss, int xlo, int xhi) {
-	int w = gauss->image->width;
-	int h = gauss->image->height;
-	int ks = gauss->KERNEL_SIZE;
-	int padding = ks / 2;
+// kernel MUST NOT be empty.
+void conv(BWImage* image, const KERNEL kernel, BWImage* result, int xlo, int xhi) {
+	// std::cout << "conv " << xlo << " " << xhi << "\n";
+	int w = image->width;
+	int h = image->height;
+	int kh = kernel.size();
+	int kw = kernel[0].size();
+	int ks = kh * kw;
+	int paddingH = kh / 2;
+	int paddingW = kw / 2;
+
+	float kernelSum = 0.0;
+	for (auto& v : kernel) {
+		for (int a : v) {
+			kernelSum += (float) a;
+		}
+	}
+	// std::cout << "kernel sum: " << kernelSum << "\n";
+
 	for (int x = xlo; x < xhi; ++x) {
 		for (int y = 0; y < w; ++y) {
 			float val = 0;
-			for (int i = 0; i < ks; ++i) {
-				for (int j = 0; j < ks; ++j) {
-					int row = x + i - padding;
-					int col = y + j - padding;
+			for (int i = 0; i < kh; ++i) {
+				for (int j = 0; j < kw; ++j) {
+					int row = x + i - paddingH;
+					int col = y + j - paddingW;
 					float pixel = 0.5;
 					if (inBounds(row, col, h, w)) {
-						pixel = gauss->image->at(row, col);
+						pixel = image->at(row, col);
 					}
-					val += pixel * gauss->kernel[i][j] / gauss->kernelSum;
+					val += pixel * kernel[i][j];
 				}
 			}
-			float* dst = gauss->resultData + x * w + y;
-			*dst += val;
+			val /= kernelSum;
+			result->set(x, y, val);
 		}
 	}
 }
@@ -30,25 +43,31 @@ void job(Gaussian* gauss, int xlo, int xhi) {
 BWImage* Gaussian::execute() {
 	int w = image->width;
 	int h = image->height;
-	resultData = new float[h * w];
-	for (int i = 0; i < h * w; ++i) {
-		resultData[i] = 0.0;
-	}
-	int threadHeight = (h - KERNEL_SIZE) / nThreads;
+	BWImage* res = new BWImage(h, w);
 
+	// choose kernel according to size of the input image
+	KERNEL* ker = &kernel_5;
+	if (h > 1600 || w > 1600) {
+		ker = &kernel_7;
+	}
+
+	// init threads
 	std::vector<std::thread> threads;
+	int threadHeight = (h - 1) / nThreads + 1;
+	// std::cout << "thread height: " << threadHeight << "\n";
 
 	for (int i = 0; i < nThreads; ++i) {
 		int xlo = i * threadHeight;
 		int xhi = std::min(xlo + threadHeight, h);
-		threads.emplace_back(job, this, xlo, xhi);
+		// std::cout << xlo << " " << xhi << "\n";
+		threads.emplace_back(conv, image, *ker, res, xlo, xhi);
 	}
-
+	// execute
 	for (auto& th : threads) {
 		th.join();
 	}
 	
-	return new BWImage(resultData, h, w, image->filename);
+	return res;
 }
 
 BWImage* Gaussian::process(BWImage* input) {

@@ -21,20 +21,28 @@ void convolve(BWImage* img, vector<vector<int>> kernel, BWImage* result, int xlo
 	int paddingW = kw / 2;
 
 	for (int x = xlo; x < xhi; ++x) {
-		for (int y = 0; y < w - kw; ++y) {
+		for (int y = 0; y < w; ++y) {
 			// sum of element-wise product
 			float intensity = 0;
+			float cnt = 1.0;
+			bool edge = false;
 			for (int kx = 0; kx < kh; ++kx) {
 				for (int ky = 0; ky < kw; ++ky) {
 					int row = x + kx - paddingH;
 					int col = y + ky - paddingW;
-					float val = 0.5;
+					float val = 0.0;
 					if (inBounds(row, col, h, w)) {
 						val = img->at(row, col);
+					}
+					else {
+						cnt += 1.0;
+						edge = true;
 					}
 					intensity += val * kernel[kx][ky];
 				}
 			}
+			intensity /= cnt;
+			if (edge) intensity = 0;
 			result->set(x, y, intensity / ks);
 		}
 	}
@@ -61,7 +69,7 @@ void magnitude(BWImage* gx, BWImage* gy, BWImage** result, int nThreads) {
 
 	std::vector<std::thread> threads;
 
-	int threadHeight = h / nThreads;
+	int threadHeight = (h - 1) / nThreads + 1;
 
 	for (int i = 0; i < nThreads; ++i) {
 		int xlo = i * threadHeight;
@@ -72,6 +80,7 @@ void magnitude(BWImage* gx, BWImage* gy, BWImage** result, int nThreads) {
 	for (auto& thr : threads) {
 		thr.join();
 	}
+
 }
 
 // Make the image more visible by scaling the intensities
@@ -102,7 +111,7 @@ void findGrad(BWImage* image, BWImage** gx, BWImage** gy, int nThreads) {
 	*gy = new BWImage(h, w);
 
 	std::vector<std::thread> threads;
-	int threadHeight = h / nThreads;
+	int threadHeight = (h - 1) / nThreads + 1;
 
 	for (int i = 0; i < nThreads; ++i) {
 		int xlo = i * threadHeight;
@@ -207,15 +216,18 @@ BWImage* Canny::execute() {
 	findGrad(image, &gx, &gy, nThreads);
 
 	// Print save sobel x and y
-	gx->save("..\\output\\" + std::to_string(id) + "sobelx.png");
-	gy->save("..\\output\\" + std::to_string(id) + "sobely.png");
+	// gx->save("..\\output\\" + std::to_string(id) + "sobelx.png");
+	// gy->save("..\\output\\" + std::to_string(id) + "sobely.png");
 
 	BWImage* gradMagnitude = nullptr;
 	magnitude(gx, gy, &gradMagnitude, nThreads);
 
-	gradMagnitude->save("..\\output\\" + std::to_string(id) + "magned.png");
+	// gradMagnitude->save("..\\output\\" + std::to_string(id) + "magned.png");
 
 	nonMaximaSuppresion(gradMagnitude, gx, gy);
+
+
+	// gradMagnitude->save("..\\output\\" + std::to_string(id) + "supped.png");
 	normalize(gradMagnitude);
 
 	gradMagnitude->save("..\\output\\" + std::to_string(id) + "normed.png");

@@ -10,16 +10,25 @@
 class Gaussian
 {
 public:
-	static const int KERNEL_SIZE = 5;
-	float kernelSum = 273.0;
+	float kernelSum_5 = 273.0;
+	float kernelSum_7 = 1003.0;
 	// float kernelSum = 25.0;
 	
-	std::vector<std::vector<int>> kernel = { 
+	KERNEL kernel_5 = { 
 		{1,  4,  7,  4, 1},
 		{4, 16, 26, 16, 4},
 		{7, 26, 41, 26, 7},
 		{4, 16, 26, 16, 4},
 		{1,  4,  7,  4, 1}};
+
+	KERNEL kernel_7 = {
+		{0, 0, 1, 2, 1, 0, 0},
+		{0, 3, 13, 22, 13, 3, 0},
+		{1, 13, 59, 97, 59, 13, 1},
+		{2, 22, 97, 159, 97, 22, 2},
+		{1, 13, 59, 97, 59, 13, 1},
+		{0, 3, 13, 22, 13, 3, 0},
+		{0, 0, 1, 2, 1, 0, 0} };
 
 	/*
 	int kernel[KERNEL_SIZE][KERNEL_SIZE] = {

@@ -51,7 +51,8 @@ void processImages(std::string inputDir, std::string outputDir) {
     for (const auto& entry : dirIt) {
         std::string ext = entry.path().extension().string();
         if (ext == PNG_EXT) { // 只处理 png 文件
-            std::string filename = entry.path().string();
+            std::string filename = entry.path().filename().string();
+            std::string path = entry.path().string();
 
             if (filename.find("test.png") != std::string::npos) {   // 跳过测试图片，REMOVE ON RELEASE!
                 // continue; 
@@ -64,18 +65,19 @@ void processImages(std::string inputDir, std::string outputDir) {
             Image* image;
 
             try {
-                Image* image = new Image(filename.c_str());
+                Image* image = new Image(path.c_str());
                 printf("成功载入图片（%dx%d）\n", image->width, image->height);
 
                 // 执行边缘检测
 
                 BWImage* grayscale = new BWImage(image);
+                // grayscale->save(outputDir + "\\" + std::to_string(id) + "grayscale.png");
                 BWImage* filtered = gaussian.process(grayscale);
-                filtered->save(outputDir + "\\" + std::to_string(id) + "filtered.png");
-                Canny canny(1);
+                // filtered->save(outputDir + "\\" + std::to_string(id) + "filtered.png");
                 BWImage* result = canny.process(filtered);
 
-                result->save(outputDir + "\\" + std::to_string(id) + "final.png");
+                
+                result->save(outputDir + "\\" + filename);
                 id++;
 
             } catch(std::string s) {
@@ -96,6 +98,11 @@ void promptDir() {
     std::getline(std::cin, inputDir);
     std::cout << "结果存放到哪个目录？\n";
     std::getline(std::cin, outputDir);
+
+    if (inputDir.size() < 2 || outputDir.size() < 2) {
+        std::cout << "路径不合法\n";
+        return;
+    }
 
     if (inputDir == outputDir) {
         std::cout << "输入和输出目录不能相同\n";
@@ -118,6 +125,7 @@ int mainMenu() {
         // 请求用户输入：
         // - 存放图片的目录
         // - 输出图片的目标目录
+        std::cout << "（请输入对应的数字，无空格）\n";
         std::cout << "1: 对给定目录下的所有 PNG 进行编原检测\n";
         std::cout << "2: 退出\n";
         std::cout << ">>> ";
