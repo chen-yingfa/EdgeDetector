@@ -24,7 +24,6 @@ public:
 	}
 
 	// void job(int xlo, int xhi);
-
 	BWImage* execute();
 };
 

@@ -4,7 +4,7 @@
 using namespace std;
 
 
-BWImage* convolve(BWImage* img, vector<vector<int>> kernel) {
+void convolve(BWImage* img, vector<vector<int>> kernel, BWImage* result, int xlo, int xhi) {
 	int h = img->height;
 	int w = img->width;
 	int kh = kernel.size();
@@ -12,42 +12,62 @@ BWImage* convolve(BWImage* img, vector<vector<int>> kernel) {
 	float ks = kh * kw;
 	int padding = kh / 2; // boundary pixels of the image
 
-
-	float* res = new float[h * w];
-	for (int i = 0; i < h * w; ++i) {
-		res[i] = 0;
-	}
-	for (int y = padding; y < h - padding; ++y) {
-		for (int x = padding; x < w - padding; ++x) {
+	for (int y = xlo; y < xhi; ++y) {
+		for (int x = 0; x < w - kw; ++x) {
 			float intensity = 0;
 			for (int ky = 0; ky < kh; ++ky) {
 				for (int kx = 0; kx < kw; ++kx) {
-					int row = y + ky - padding;
-					int col = x + kx - padding;
+					int row = y + ky;
+					int col = x + kx;
 					float p = img->at(0, 0);
 					float r = img->at(row, col);
 					intensity += img->at(row, col) * kernel[ky][kx];
 				}
 			}
-			float* dst = res + y * w + x;
+			int row = y + kh / 2;
+			int col = x + kw / 2;;
+			float* dst = result->data + row * w + col;
 			*dst = intensity / ks;
 		}
 	}
-	return new BWImage(res, h, w, "a.png");
 }
 
 
 
-BWImage* magnitude(BWImage* gx, BWImage* gy) {
+// for multithreading
+void magnitudeJob(BWImage* gx, BWImage* gy, BWImage* result, int xhi, int xlo) {
+	int w = gx->width;
+	int h = gx->height;
+	float* data = result->data;
+	for (int y = xlo; y < xhi; ++y) {
+		for (int x = 0; x < w; ++x) {
+			data[y * w + x] = hypot(gx->at(y, x), gy->at(y, x));
+		}
+	}
+}
+
+
+BWImage* magnitude(BWImage* gx, BWImage* gy, int nThreads) {
 	int w = gx->width;
 	int h = gx->height;
 	float* magnitude = new float[w * h];
-	for (int y = 0; y < h; ++y) {
-		for (int x = 0; x < w; ++x) {
-			magnitude[y * w + x] = hypot(gx->at(y, x), gy->at(y, x));
-		}
+	BWImage* result = new BWImage(magnitude, h, w, "");
+
+	std::vector<std::thread> threads;
+
+	int threadHeight = h / nThreads;
+
+	for (int i = 0; i < nThreads; ++i) {
+		int xlo = i * threadHeight;
+		int xhi = std::min(h, xlo + threadHeight);
+		std::thread thr(magnitudeJob, gx, gy, result, xhi, xlo);
+		threads.push_back(move(thr));
 	}
-	return new BWImage(magnitude, h, w, "");
+
+	for (auto& thr : threads) {
+		thr.join();
+	}
+	return result;
 }
 
 // Make the image more visible by scaling the intensities
@@ -67,23 +87,49 @@ void normalize(BWImage* img) {
 	}
 }
 
+void findGrad(BWImage* image, BWImage** gx, BWImage** gy, int nThreads) {
+	int w = image->width;
+	int h = image->height;
+	int size = h * w;
 
+	vector<vector<int>> sobel_x{ {-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1 } };
+	vector<vector<int>> sobel_y{ {1, 2, 1}, {0, 0, 0}, {-1, -2, -1} };
+	float* gxdata = new float[size];
+	float* gydata = new float[size];
+	for (int i = 0; i < size; ++i) {
+		gxdata[i] = 0.0;
+		gydata[i] = 0.0;
+	}
 
+	*gx = new BWImage(gxdata, h, w, "");
+	*gy = new BWImage(gydata, h, w, "");
+
+	std::vector<std::thread> threads;
+	int threadHeight = h / nThreads;
+
+	for (int i = 0; i < nThreads; ++i) {
+		int xlo = i * threadHeight;
+		int xhi = std::min(h, xlo + threadHeight);
+		auto gxThr = std::thread(convolve, image, sobel_x, *gx, xlo, xhi);
+		auto gyThr = std::thread(convolve, image, sobel_y, *gy, xlo, xhi);
+		threads.push_back(move(gxThr));
+		threads.push_back(move(gyThr));
+
+	}
+
+	for (auto& thr : threads) {
+		thr.join();
+	}
+}
 
 BWImage* Canny::execute() {
 	int w = image->width;
 	int h = image->height;
-	resultData = new float[h * w];
-	for (int i = 0; i < h * w; ++i) {
-		resultData[i] = 0.0;
-	}
-
+	int size = h * w;
 
 	// Find gradients
-	vector<vector<int>> sobel_x{ {-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1 } };
-	vector<vector<int>> sobel_y{ {1, 2, 1}, {0, 0, 0}, {-1, -2, -1} };
-	BWImage* gx = convolve(image, sobel_x);
-	BWImage* gy = convolve(image, sobel_y);
+	BWImage* gx = nullptr, * gy = nullptr;
+	findGrad(image, &gx, &gy, nThreads);
 
 	// Print save sobel x and y
 	Image* tmpImg = bwToColor(gx);
@@ -91,7 +137,7 @@ BWImage* Canny::execute() {
 	tmpImg = bwToColor(gy);
 	tmpImg->save("..\\input\\sobely.test.png");
 	
-	BWImage* gradientMagnitude = magnitude(gx, gy);
+	BWImage* gradientMagnitude = magnitude(gx, gy, nThreads);
 	normalize(gradientMagnitude);
 
 	return gradientMagnitude;
