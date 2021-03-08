@@ -5,6 +5,12 @@ using namespace std;
 
 # define PI	3.14159265358979323
 
+float bound(float f, float min, float max) {
+	if (f < min) return min;
+	if (f > max) return max;
+	return f;
+}
+
 void convolve(BWImage* img, vector<vector<int>> kernel, BWImage* result, int xlo, int xhi) {
 	int h = img->height;
 	int w = img->width;
@@ -42,6 +48,7 @@ void magnitudeJob(BWImage* gx, BWImage* gy, BWImage* result, int xhi, int xlo) {
 	for (int x = 0; x < h; ++x) {
 		for (int y = 0; y < w; ++y) {
 			float val = hypot(gx->at(x, y), gy->at(x, y));
+			val = bound(val, 0.0f, 1.0f);
 			result->set(x, y, val);
 		}
 	}
