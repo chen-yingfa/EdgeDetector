@@ -45,8 +45,7 @@ BWImage* Gaussian::execute() {
 	for (int i = 0; i < nThreads; ++i) {
 		int xlo = i * threadHeight;
 		int xhi = std::min(xlo + threadHeight, h);
-		std::thread thr(job, this, xlo, xhi);
-		threads.push_back(move(thr));
+		threads.emplace_back(job, this, xlo, xhi);
 	}
 
 	for (auto& th : threads) {

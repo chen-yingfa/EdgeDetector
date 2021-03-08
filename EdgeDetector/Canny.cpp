@@ -60,8 +60,7 @@ BWImage* magnitude(BWImage* gx, BWImage* gy, int nThreads) {
 	for (int i = 0; i < nThreads; ++i) {
 		int xlo = i * threadHeight;
 		int xhi = std::min(h, xlo + threadHeight);
-		std::thread thr(magnitudeJob, gx, gy, result, xhi, xlo);
-		threads.push_back(move(thr));
+		threads.emplace_back(magnitudeJob, gx, gy, result, xhi, xlo);
 	}
 
 	for (auto& thr : threads) {
@@ -110,10 +109,8 @@ void findGrad(BWImage* image, BWImage** gx, BWImage** gy, int nThreads) {
 	for (int i = 0; i < nThreads; ++i) {
 		int xlo = i * threadHeight;
 		int xhi = std::min(h, xlo + threadHeight);
-		auto gxThr = std::thread(convolve, image, sobel_x, *gx, xlo, xhi);
-		auto gyThr = std::thread(convolve, image, sobel_y, *gy, xlo, xhi);
-		threads.push_back(move(gxThr));
-		threads.push_back(move(gyThr));
+		threads.emplace_back(convolve, image, sobel_x, *gx, xlo, xhi);
+		threads.emplace_back(convolve, image, sobel_y, *gy, xlo, xhi);
 
 	}
 
