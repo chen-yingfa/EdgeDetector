@@ -6,6 +6,22 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+Image* bwToColor(const BWImage* bwImage) {
+	int h = bwImage->height;
+	int w = bwImage->width;
+	uchar* data = new uchar[h * w * 3];
+	uchar* p = data;
+
+	for (int i = 0; i < h; ++i) {
+		for (int j = 0; j < w; ++j) {
+			uchar val = (uchar)255.0 * bwImage->at(i, j);
+			p[2] = p[1] = p[0] = val;
+			p += 3;
+		}
+	}
+	return new Image(data, h, w, bwImage->filename);
+}
+
 Image::Image() :
 		filename(""),
 		data(nullptr),
@@ -21,6 +37,7 @@ Image::Image(std::string filename) :
 	}
 	this->bytesPerRow = bytesPerPixel * width;
 }
+
 Image::Image(uchar* data, int h, int w, std::string filename) {
 	this->data = data;
 	height = h;
@@ -110,6 +127,16 @@ BWImage::BWImage(Image* img) {
 	}
 }
 
+BWImage::BWImage(int height, int width)
+	: height(height),
+	width(width),
+	filename("")
+{
+	data = new float[width * height];
+	for (int i = 0; i < width * height; ++i) 
+		data[i] = 0.0;
+}
+
 BWImage::BWImage(float* data, int h, int w, std::string filename) {
 	height = h;
 	width = w;
@@ -119,6 +146,11 @@ BWImage::BWImage(float* data, int h, int w, std::string filename) {
 
 BWImage::~BWImage() {
 	delete[] data;
+}
+
+void BWImage::save(std::string filename) const {
+	Image* colored = bwToColor(this);
+	colored->save(filename);
 }
 
 float BWImage::at(const int x, const int y) const {
@@ -140,18 +172,3 @@ BWImage* BWImage::subImage(int x, int y, int h, int w) {
 	return new BWImage(newdata, h, w, filename);
 }
 
-Image* bwToColor(BWImage* bwImage) {
-	int h = bwImage->height;
-	int w = bwImage->width;
-	uchar* data = new uchar[h * w * 3];
-	uchar *p = data;
-
-	for (int i = 0; i < h; ++i) {
-		for (int j = 0; j < w; ++j) {
-			uchar val = (uchar)255.0 * bwImage->at(i, j);
-			p[2] = p[1] = p[0] = val;
-			p += 3;
-		}
-	}
-	return new Image(data, h, w, bwImage->filename);
-}

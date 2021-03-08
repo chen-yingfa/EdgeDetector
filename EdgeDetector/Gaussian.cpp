@@ -1,10 +1,6 @@
 #include "Gaussian.h"
 #include <iostream>
 
-bool inline inBounds(int x, int y, int n, int m) {
-	return (0 <= x && x < n && 0 <= y && y < m);
-}
-
 // NOTE: height of image must be >= xhi + KERNEL_SIZE
 void job(Gaussian* gauss, int xlo, int xhi) {
 	int w = gauss->image->width;
@@ -53,4 +49,9 @@ BWImage* Gaussian::execute() {
 	}
 	
 	return new BWImage(resultData, h, w, image->filename);
+}
+
+BWImage* Gaussian::process(BWImage* input) {
+	setImage(input);
+	return execute();
 }

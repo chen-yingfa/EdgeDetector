@@ -2,9 +2,11 @@
 #include <thread>
 #include <vector>
 #include <cmath>
+#include <cassert>
 #include <algorithm>
 #include "image.h"
 #include "Vec.h"
+#include <queue>
 
 class Canny
 {
@@ -13,8 +15,17 @@ public:
 	BWImage* image;
 	float* resultData;
 	int nThreads;
+	float tmin = 0.08, tmax = 0.24;
 
-	Canny(int nThreads) : image(nullptr), resultData(nullptr), nThreads(nThreads) {}
+	Canny(int nThreads) : 
+		image(nullptr), 
+		resultData(nullptr), 
+		nThreads(nThreads) {
+		assert(nThreads > 0);
+	}
+	Canny(int nThreads, int tmin, int tmax) 
+		: image(nullptr), resultData(nullptr), 
+		nThreads(nThreads), tmin(tmin), tmax(tmax) {}
 	~Canny() {
 
 	}
@@ -25,5 +36,6 @@ public:
 
 	// void job(int xlo, int xhi);
 	BWImage* execute();
+	BWImage* process(BWImage* input);
 };
 

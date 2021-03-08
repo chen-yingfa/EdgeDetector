@@ -2,6 +2,7 @@
 #include <thread>
 #include <vector>
 #include <cmath>
+#include <cassert>
 #include <algorithm>
 #include "image.h"
 #include "Vec.h"
@@ -33,7 +34,9 @@ public:
 	float* resultData;
 	int nThreads;
 
-	Gaussian(int nThreads) : image(nullptr), resultData(nullptr), nThreads(nThreads) {}
+	Gaussian(int nThreads) : image(nullptr), resultData(nullptr), nThreads(nThreads) {
+		assert(nThreads > 0);
+	}
 	~Gaussian() {
 		
 	}
@@ -45,5 +48,7 @@ public:
 	// void job(int xlo, int xhi);
 
 	BWImage* execute();
+
+	BWImage* process(BWImage* input);
 };
 

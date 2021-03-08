@@ -11,48 +11,46 @@ void convolve(BWImage* img, vector<vector<int>> kernel, BWImage* result, int xlo
 	int kh = kernel.size();
 	int kw = kernel[0].size();
 	float ks = kh * kw;
-	int padding = kh / 2; // boundary pixels of the image
+	int paddingH = kh / 2; // boundary pixels of the image
+	int paddingW = kw / 2;
 
-	for (int y = xlo; y < xhi; ++y) {
-		for (int x = 0; x < w - kw; ++x) {
+	for (int x = xlo; x < xhi; ++x) {
+		for (int y = 0; y < w - kw; ++y) {
+			// sum of element-wise product
 			float intensity = 0;
-			for (int ky = 0; ky < kh; ++ky) {
-				for (int kx = 0; kx < kw; ++kx) {
-					int row = y + ky;
-					int col = x + kx;
-					float p = img->at(0, 0);
-					float r = img->at(row, col);
-					intensity += img->at(row, col) * kernel[ky][kx];
+			for (int kx = 0; kx < kh; ++kx) {
+				for (int ky = 0; ky < kw; ++ky) {
+					int row = x + kx - paddingH;
+					int col = y + ky - paddingW;
+					float val = 0.5;
+					if (inBounds(row, col, h, w)) {
+						val = img->at(row, col);
+					}
+					intensity += val * kernel[kx][ky];
 				}
 			}
-			int row = y + kh / 2;
-			int col = x + kw / 2;;
-			float* dst = result->data + row * w + col;
-			*dst = intensity / ks;
+			result->set(x, y, intensity / ks);
 		}
 	}
 }
-
 
 
 // for multithreading
 void magnitudeJob(BWImage* gx, BWImage* gy, BWImage* result, int xhi, int xlo) {
 	int w = gx->width;
 	int h = gx->height;
-	float* data = result->data;
-	for (int y = xlo; y < xhi; ++y) {
-		for (int x = 0; x < w; ++x) {
-			data[y * w + x] = hypot(gx->at(y, x), gy->at(y, x));
+	for (int x = 0; x < h; ++x) {
+		for (int y = 0; y < w; ++y) {
+			float val = hypot(gx->at(x, y), gy->at(x, y));
+			result->set(x, y, val);
 		}
 	}
 }
 
-
-BWImage* magnitude(BWImage* gx, BWImage* gy, int nThreads) {
+void magnitude(BWImage* gx, BWImage* gy, BWImage** result, int nThreads) {
 	int w = gx->width;
 	int h = gx->height;
-	float* magnitude = new float[w * h];
-	BWImage* result = new BWImage(magnitude, h, w, "");
+	*result = new BWImage(h, w);
 
 	std::vector<std::thread> threads;
 
@@ -61,13 +59,12 @@ BWImage* magnitude(BWImage* gx, BWImage* gy, int nThreads) {
 	for (int i = 0; i < nThreads; ++i) {
 		int xlo = i * threadHeight;
 		int xhi = std::min(h, xlo + threadHeight);
-		threads.emplace_back(magnitudeJob, gx, gy, result, xhi, xlo);
+		threads.emplace_back(magnitudeJob, gx, gy, *result, xhi, xlo);
 	}
 
 	for (auto& thr : threads) {
 		thr.join();
 	}
-	return result;
 }
 
 // Make the image more visible by scaling the intensities
@@ -94,15 +91,8 @@ void findGrad(BWImage* image, BWImage** gx, BWImage** gy, int nThreads) {
 
 	vector<vector<int>> sobel_x{ {-1, 0, 1}, {-2, 0, 2}, {-1, 0, 1 } };
 	vector<vector<int>> sobel_y{ {1, 2, 1}, {0, 0, 0}, {-1, -2, -1} };
-	float* gxdata = new float[size];
-	float* gydata = new float[size];
-	for (int i = 0; i < size; ++i) {
-		gxdata[i] = 0.0;
-		gydata[i] = 0.0;
-	}
-
-	*gx = new BWImage(gxdata, h, w, "");
-	*gy = new BWImage(gydata, h, w, "");
+	*gx = new BWImage(h, w);
+	*gy = new BWImage(h, w);
 
 	std::vector<std::thread> threads;
 	int threadHeight = h / nThreads;
@@ -112,7 +102,6 @@ void findGrad(BWImage* image, BWImage** gx, BWImage** gy, int nThreads) {
 		int xhi = std::min(h, xlo + threadHeight);
 		threads.emplace_back(convolve, image, sobel_x, *gx, xlo, xhi);
 		threads.emplace_back(convolve, image, sobel_y, *gy, xlo, xhi);
-
 	}
 
 	for (auto& thr : threads) {
@@ -159,28 +148,78 @@ void nonMaximaSuppresion(BWImage* gradMagnitude, BWImage* gx , BWImage* gy) {
 	}
 }
 
+BWImage* hysteresis(BWImage* image, float tmin, float tmax) {
+	static int adj[8][2] = {
+		{-1, -1}, {-1, 0}, {-1, 1}, {0, -1},
+		{0, 1}, {1, -1}, {1, 0}, {1, 1} };
+
+	int h = image->height;
+	int w = image->width;
+	BWImage* res = new BWImage(h, w);	// should only consist of 1.0 and 0.0
+
+	float* data = res->data;
+	std::queue<pair<int, int>> q;
+	for (int x = 1; x < h - 1; ++x) {
+		for (int y = 1; y < w - 1; ++y) {
+			if (image->at(x, y) < tmax || res->at(x, y) > 0.5) continue;
+			
+			// recursively look for semi-bright adjacent pixels
+			res->set(x, y, 1.0);
+			q.push({ x, y });
+			while (!q.empty()) {
+				int curx = q.front().first;
+				int cury = q.front().second;
+				q.pop();
+
+				for (int i = 0; i < 8; ++i) {
+					int nx = curx + adj[i][0];
+					int ny = cury + adj[i][1];
+
+					if (!inBounds(nx, ny, h, w)) continue;
+
+					if (image->at(nx, ny) > tmin && res->at(nx, ny) < 0.5) {
+						res->set(nx, ny, 1.0);
+						q.push({ nx, ny });
+					}
+				}
+			}
+		}
+	}
+	return res;
+}
 
 BWImage* Canny::execute() {
+	static int id = 0;
 	int w = image->width;
 	int h = image->height;
 	int size = h * w;
 
 	// Find gradients
-	BWImage* gx = nullptr, * gy = nullptr;
+	BWImage* gx = nullptr;
+	BWImage* gy = nullptr;
 	findGrad(image, &gx, &gy, nThreads);
 
 	// Print save sobel x and y
-	Image* tmpImg = bwToColor(gx);
-	tmpImg->save("..\\input\\sobelx.test.png");
-	tmpImg = bwToColor(gy);
-	tmpImg->save("..\\input\\sobely.test.png");
-	
-	BWImage* gradientMagnitude = magnitude(gx, gy, nThreads);
+	gx->save("..\\output\\" + std::to_string(id) + "sobelx.png");
+	gy->save("..\\output\\" + std::to_string(id) + "sobely.png");
 
-	nonMaximaSuppresion(gradientMagnitude, gx, gy);
-	normalize(gradientMagnitude);
+	BWImage* gradMagnitude = nullptr;
+	magnitude(gx, gy, &gradMagnitude, nThreads);
 
-	return gradientMagnitude;
+	gradMagnitude->save("..\\output\\" + std::to_string(id) + "magned.png");
 
-	return new BWImage(resultData, h, w, image->filename);
+	nonMaximaSuppresion(gradMagnitude, gx, gy);
+	normalize(gradMagnitude);
+
+	gradMagnitude->save("..\\output\\" + std::to_string(id) + "normed.png");
+
+	BWImage* result = hysteresis(gradMagnitude, tmin, tmax);
+
+	++id;
+	return result;
+}
+
+BWImage* Canny::process(BWImage* input) {
+	setImage(input);
+	return execute();
 }

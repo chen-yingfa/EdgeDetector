@@ -41,18 +41,15 @@ public:
 
 	BWImage() : height(0), width(0), filename(""), data(nullptr) {}
 	BWImage(Image* img);
-	BWImage(int height, int width) 
-		:	height(height),
-			width(width),
-			filename("") {
-		data = new float[width * height];
-	}
+	BWImage(int height, int width);
 	BWImage(float* data, int h, int w, std::string filename);
 	~BWImage();
 
+	void save(std::string filename) const;
+
 	int size() const { return height * width; }
 
-	float at(const int x, const int y) const;
+	inline float at(const int x, const int y) const;
 	void set(const int x, const int y, const float val);
 	
 

@@ -43,16 +43,18 @@ void processImages(std::string inputDir, std::string outputDir) {
 
     fs::directory_iterator dirIt(inputDir);
 
-    Gaussian gaussian(1);
+    Gaussian gaussian(20);
+    Canny canny(20);
 
     // 遍历目录下所有文件
+    int id = 0;
     for (const auto& entry : dirIt) {
         std::string ext = entry.path().extension().string();
         if (ext == PNG_EXT) { // 只处理 png 文件
             std::string filename = entry.path().string();
 
             if (filename.find("test.png") != std::string::npos) {   // 跳过测试图片，REMOVE ON RELEASE!
-                continue; 
+                // continue; 
             }
             std::cout << "正在处理：" << filename << "\n";
 
@@ -63,38 +65,18 @@ void processImages(std::string inputDir, std::string outputDir) {
 
             try {
                 Image* image = new Image(filename.c_str());
-                std::cout << "成功载入图片\n";
+                printf("成功载入图片（%dx%d）\n", image->width, image->height);
 
-                std::cout << image->width << " " << image->height << " "
-                    << image->bytesPerPixel << " " << image->bytesPerRow << "\n";
+                // 执行边缘检测
 
-                // save a small part of the picture
-                // image = image->subImage(image->height / 10, image->width / 10, image->height / 2, image->width / 2);
+                BWImage* grayscale = new BWImage(image);
+                BWImage* filtered = gaussian.process(grayscale);
+                filtered->save(outputDir + "\\" + std::to_string(id) + "filtered.png");
+                Canny canny(1);
+                BWImage* result = canny.process(filtered);
 
-                // perform edge detection on image
-
-                BWImage* bw = new BWImage(image);
-                image = bwToColor(bw);
-
-                image->save(outputDir + "\\test.png");
-
-
-                
-                gaussian.setImage(bw);
-
-                BWImage* filtered = gaussian.execute();
-
-                image = bwToColor(filtered);
-                image->save(outputDir + "\\filtered_test.png");
-
-
-                Canny canny(20);
-                //BWImage* nbw = new BWImage(image);
-                canny.setImage(filtered);
-                BWImage* cool = canny.execute();
-
-                image = bwToColor(cool);
-                image->save(outputDir + "\\NEWfiltered_test.png");
+                result->save(outputDir + "\\" + std::to_string(id) + "final.png");
+                id++;
 
             } catch(std::string s) {
                 std::cout << s << "\n";
@@ -104,18 +86,21 @@ void processImages(std::string inputDir, std::string outputDir) {
 }
 
 
-int main() {
-    std::cout << "CPP version: " << __cplusplus << "\n";
-
+void promptDir() {
     // 请求用户输入：
     // - 存放图片的目录
     // - 输出图片的目标目录 
     std::string inputDir, outputDir;
-    std::cout << "注：输入路径，略去引号\n";
+    std::cout << "注：请输入绝对路径，略去引号\n";
     std::cout << "请输入存放图片的目录：\n";
     std::getline(std::cin, inputDir);
-    std::cout << "请输入结果的目标目录：\n";
+    std::cout << "结果存放到哪个目录？\n";
     std::getline(std::cin, outputDir);
+
+    if (inputDir == outputDir) {
+        std::cout << "输入和输出目录不能相同\n";
+        return;
+    }
 
     try {
         processImages(inputDir, outputDir);
@@ -124,8 +109,33 @@ int main() {
     catch (std::string s) {
         std::cout << s << "\n";
     }
-    
-    std::cout << "结束。按任意键退出……\n";
+}
+
+int mainMenu() {
+    std::cout << "CPP version: " << __cplusplus << "\n";
+    std::string cmd;
+    while (true) {
+        // 请求用户输入：
+        // - 存放图片的目录
+        // - 输出图片的目标目录
+        std::cout << "1: 对给定目录下的所有 PNG 进行编原检测\n";
+        std::cout << "2: 退出\n";
+        std::cout << ">>> ";
+        std::getline(std::cin, cmd);
+        
+        if (cmd == "1") {
+            promptDir();
+            std::cout << "\n";
+        }
+        else if (cmd == "2") {
+            break;
+        }
+    }
+    return 0;
+}
+
+int main() {
+    mainMenu();
     return 0;
 }
 
